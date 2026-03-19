@@ -8,7 +8,7 @@
 
 const float PI = asin(1.0) * 2.0;
 
-// --- FÁJLBEOLVASÓ FÜGGVÉNY ---
+
 // Ez fogja beolvasni a vertex.glsl és fragment.glsl fájlokat
 std::string readShaderFile(const char* filePath) {
     std::ifstream shaderFile;
@@ -36,7 +36,7 @@ int main() {
     glfwSwapInterval(1); // V-Sync (villódzás ellen)
     glewInit();
 
-    // --- SHADEREK BEOLVASÁSA KÜLÖN FÁJLOKBÓL ---
+    // Shaderek beolvasasa kulonfajlbol
     std::string vertexCode = readShaderFile("vertex.glsl");
     std::string fragmentCode = readShaderFile("fragment.glsl");
 
