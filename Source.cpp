@@ -1,60 +1,30 @@
-﻿#include <GL/glew.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <cmath>
 #include <algorithm>
-
+#include <fstream>
+#include <sstream>
 
 const float PI = asin(1.0) * 2.0;
 
-//  VERTEX SHADER
-
-const char* vertexShaderSource = R"(
-#version 330 core
-layout (location = 0) in vec2 aPos;
-uniform mat4 u_projection;
-
-out vec2 vPos; // Átküldjük a fragment shadernek
-
-void main() {
-    gl_Position = u_projection * vec4(aPos, 0.0, 1.0);
-    vPos = aPos; // Megjegyezzük az eredeti [0-600] közötti koordinátát
-}
-)";
-
-//   FRAGMENT SHADER 
-
-const char* fragmentShaderSource = R"(
-#version 330 core
-in vec2 vPos; // A vertex shaderből érkező koordináta
-out vec4 FragColor;
-
-uniform int u_isCircle;
-uniform vec2 u_circleCenter;
-uniform float u_radius;
-uniform vec3 u_colorCenter;
-uniform vec3 u_colorEdge;
-uniform vec3 u_lineColor;
-
-void main() {
-    if (u_isCircle == 1) {
-        // Távolság a kapott vPos és a középpont között
-        float dist = distance(vPos, u_circleCenter);
-        
-        // Sugarat meghaladó pixelek eldobása (így lesz kör a négyzetből)
-        if (dist > u_radius) discard; 
-
-        // Lineáris interpoláció (0.0 a közepén, 1.0 a szélén)
-        float t = dist / u_radius;
-        vec3 finalColor = mix(u_colorCenter, u_colorEdge, t);
-        
-        FragColor = vec4(finalColor, 1.0);
-    } else {
-        // Ha vonal
-        FragColor = vec4(u_lineColor, 1.0);
+// --- FÁJLBEOLVASÓ FÜGGVÉNY ---
+// Ez fogja beolvasni a vertex.glsl és fragment.glsl fájlokat
+std::string readShaderFile(const char* filePath) {
+    std::ifstream shaderFile;
+    shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try {
+        shaderFile.open(filePath);
+        std::stringstream shaderStream;
+        shaderStream << shaderFile.rdbuf();
+        shaderFile.close();
+        return shaderStream.str();
+    }
+    catch (std::ifstream::failure& e) {
+        std::cout << "HIBA: Nem talalhato vagy nem olvashato a shader fajl: " << filePath << std::endl;
+        return "";
     }
 }
-)";
 
 int main() {
     if (!glfwInit()) return -1;
@@ -66,8 +36,15 @@ int main() {
     glfwSwapInterval(1); // V-Sync (villódzás ellen)
     glewInit();
 
-    GLuint vs = glCreateShader(GL_VERTEX_SHADER); glShaderSource(vs, 1, &vertexShaderSource, NULL); glCompileShader(vs);
-    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER); glShaderSource(fs, 1, &fragmentShaderSource, NULL); glCompileShader(fs);
+    // --- SHADEREK BEOLVASÁSA KÜLÖN FÁJLOKBÓL ---
+    std::string vertexCode = readShaderFile("vertex.glsl");
+    std::string fragmentCode = readShaderFile("fragment.glsl");
+
+    const char* vertexSourcePtr = vertexCode.c_str();
+    const char* fragmentSourcePtr = fragmentCode.c_str();
+
+    GLuint vs = glCreateShader(GL_VERTEX_SHADER); glShaderSource(vs, 1, &vertexSourcePtr, NULL); glCompileShader(vs);
+    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER); glShaderSource(fs, 1, &fragmentSourcePtr, NULL); glCompileShader(fs);
     GLuint prog = glCreateProgram(); glAttachShader(prog, vs); glAttachShader(prog, fs); glLinkProgram(prog);
 
     GLuint vbo, vao; glGenVertexArrays(1, &vao); glGenBuffers(1, &vbo);
