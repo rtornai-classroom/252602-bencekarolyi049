@@ -3,7 +3,7 @@
 in vec2 vPos; 
 out vec4 FragColor;
 
-// A C++ kódból érkező változók (Uniforms)
+// A C++ kódból valtozok
 uniform int u_isCircle;
 uniform vec2 u_circleCenter;
 uniform float u_radius;
@@ -17,7 +17,7 @@ void main() {
         // Távolság a kapott vPos és a középpont között
         float dist = distance(vPos, u_circleCenter);
                 
-        // Sugarat meghaladó pixelek eldobása (így lesz kör a négyzetből)
+        // Sugarat meghaladó pixelek eldobása így lesz majd kör
         if (dist > u_radius) {
             discard; 
         }
@@ -28,7 +28,7 @@ void main() {
                 
         FragColor = vec4(finalColor, 1.0);
     } 
-    // Ha a vízszintes vonalat rajzoljuk
+    // Ha a vízszintes vonalat akarjuk rajzolni
     else {
         FragColor = vec4(u_lineColor, 1.0);
     }
