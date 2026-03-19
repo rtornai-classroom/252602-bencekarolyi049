@@ -9,6 +9,6 @@ void main() {
     // Pozíció beállítása a projekciós mátrixszal
     gl_Position = u_projection * vec4(aPos, 0.0, 1.0);
     
-    // A DPI skálázás hibáinak elkerülése végett a pontos koordinátát küldjük át
+    // A pontos kordináták átküldése ne legyen eltérés.
     vPos = aPos; 
 }
