@@ -2,13 +2,9 @@
 
 layout (location = 0) in vec2 aPos;
 uniform mat4 u_projection;
-
-out vec2 vPos;
+uniform float u_pointSize; // A pontok átmérője
 
 void main() {
-    // Pozíció beállítása a projekciós mátrixszal
     gl_Position = u_projection * vec4(aPos, 0.0, 1.0);
-    
-    // A pontos kordináták átküldése ne legyen eltérés.
-    vPos = aPos; 
+    gl_PointSize = u_pointSize; // Beállítjuk a kért pötty-méretet
 }
