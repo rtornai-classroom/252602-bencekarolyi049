@@ -1,4 +1,4 @@
-﻿#include <GL/glew.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <vector>
@@ -23,13 +23,13 @@ std::string readShaderFile(const char* filePath) {
     }
 }
 
-// --- GLOBÁLIS VÁLTOZÓK AZ EGÉRKEZELÉSHEZ ---
+// --- GLOBÁLIS VÁLTOZÓK ---
 struct Point { float x, y; };
-std::vector<Point> controlPoints; // A kontrollpontok listája
-int draggedPointIndex = -1;       // Épp melyik pontot húzzuk (-1 = semelyiket)
-const float pointRadius = 6.0f;   // A kerek pontok sugara (d=12 pixel)
+std::vector<Point> controlPoints;
+int draggedPointIndex = -1;
+const float pointRadius = 6.0f;
 
-// --- MATEMATIKA: Binomiális együttható (n alatt a k) ---
+// --- MATEMATIKA ---
 double nCr(int n, int k) {
     if (k < 0 || k > n) return 0;
     if (k == 0 || k == n) return 1;
@@ -40,36 +40,32 @@ double nCr(int n, int k) {
     return res;
 }
 
-// --- EGÉR KATTINTÁS KEZELŐ ---
+// --- EGÉR KATTINTÁS ---
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
 
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) {
-            // Megnézzük, rákattintottunk-e egy meglévő pontra (Drag kezdete)
             bool clickedOnPoint = false;
             for (size_t i = 0; i < controlPoints.size(); ++i) {
                 float dx = controlPoints[i].x - (float)xpos;
                 float dy = controlPoints[i].y - (float)ypos;
-                if (sqrt(dx * dx + dy * dy) <= pointRadius + 2.0f) { // Kis ráhagyás a könnyebb kattintásért
+                if (sqrt(dx * dx + dy * dy) <= pointRadius + 2.0f) {
                     draggedPointIndex = i;
                     clickedOnPoint = true;
                     break;
                 }
             }
-            // BÓNUSZ 2: Ha üres helyre kattintottunk, új pont létrehozása
             if (!clickedOnPoint) {
                 controlPoints.push_back({ (float)xpos, (float)ypos });
             }
         }
         else if (action == GLFW_RELEASE) {
-            // Drag befejezése
             draggedPointIndex = -1;
         }
     }
 
-    // BÓNUSZ 2: Jobb gombbal meglévő pont eltávolítása
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
         for (size_t i = 0; i < controlPoints.size(); ++i) {
             float dx = controlPoints[i].x - (float)xpos;
@@ -82,9 +78,8 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     }
 }
 
-// --- EGÉR MOZGÁS KEZELŐ (DRAG AND DROP) ---
+// --- EGÉR MOZGÁS ---
 void cursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
-    // 3. FELADAT: A kontrollpontok a drag-and-drop technikával mozgathatóak
     if (draggedPointIndex != -1) {
         controlPoints[draggedPointIndex].x = (float)xpos;
         controlPoints[draggedPointIndex].y = (float)ypos;
@@ -93,19 +88,14 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
 
 int main() {
     if (!glfwInit()) return -1;
-
-    GLFWwindow* window = glfwCreateWindow(600, 600, "Bezier-gorbe Szerkeszto", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(600, 600, "Bezier-gorbe", NULL, NULL);
     if (!window) return -1;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
     glewInit();
 
-    // Egér funkciók bekötése a GLFW-be
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetCursorPosCallback(window, cursorPosCallback);
-
-    // Fontos: Engedélyezzük, hogy a shader átméretezze a pontokat
-    glEnable(GL_PROGRAM_POINT_SIZE);
 
     std::string vertexCode = readShaderFile("vertex.glsl");
     std::string fragmentCode = readShaderFile("fragment.glsl");
@@ -120,7 +110,6 @@ int main() {
     glBindVertexArray(vao); glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0); glEnableVertexAttribArray(0);
 
-    // Projekciós mátrix: A bal felső sarok a (0,0), jobb alsó a (600,600). Így egyezik az egérrel!
     float m[16] = {
          2.0f / 600.0f,  0.0f,         0.0f, 0.0f,
          0.0f,        -2.0f / 600.0f,  0.0f, 0.0f,
@@ -128,17 +117,19 @@ int main() {
         -1.0f,         1.0f,         0.0f, 1.0f
     };
 
-    // 2. FELADAT: Kezdetben 4 darab kontrollpont
     controlPoints = { {100, 500}, {200, 100}, {400, 100}, {500, 500} };
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        glClearColor(0.9f, 0.9f, 0.9f, 1.0f); // Világosszürke háttér
+
+        // Fekete háttér
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
         glUseProgram(prog);
         glUniformMatrix4fv(glGetUniformLocation(prog, "u_projection"), 1, 0, m);
 
-        // --- 1. KONTROLLPOLIGON RAJZOLÁSA (BÓNUSZ 1) ---
+        // 1. KONTROLLPOLIGON (Vékony Kék)
         if (controlPoints.size() > 1) {
             std::vector<float> polyVertices;
             for (const auto& p : controlPoints) {
@@ -146,23 +137,19 @@ int main() {
             }
             glBufferData(GL_ARRAY_BUFFER, polyVertices.size() * sizeof(float), polyVertices.data(), GL_DYNAMIC_DRAW);
             glUniform1i(glGetUniformLocation(prog, "u_isPoint"), 0);
-            glUniform3f(glGetUniformLocation(prog, "u_color"), 0.7f, 0.7f, 0.7f); // Szürke szín
-            // GL_LINE_STRIP: Összeköti a pontokat, de nem záródik vissza!
+            glUniform3f(glGetUniformLocation(prog, "u_color"), 0.0f, 0.5f, 1.0f); // Kék
             glDrawArrays(GL_LINE_STRIP, 0, controlPoints.size());
         }
 
-        // --- 2. BÉZIER-GÖRBE RAJZOLÁSA (1. FELADAT) ---
+        // 2. BÉZIER-GÖRBE (Vastag Piros)
         if (controlPoints.size() > 1) {
             std::vector<float> bezierVertices;
-            int n = controlPoints.size() - 1; // A görbe fokszáma
-            int segments = 100; // 100 darab vonalkából rakjuk össze a görbét (részletes törött vonal)
+            int n = controlPoints.size() - 1;
+            int segments = 100;
 
             for (int i = 0; i <= segments; ++i) {
                 float t = (float)i / (float)segments;
-                float bx = 0.0f;
-                float by = 0.0f;
-
-                // Bézier matematikai képlet alkalmazása (Bernstein-polinom)
+                float bx = 0.0f; float by = 0.0f;
                 for (int j = 0; j <= n; ++j) {
                     float bPoly = nCr(n, j) * pow(1.0f - t, n - j) * pow(t, j);
                     bx += bPoly * controlPoints[j].x;
@@ -172,22 +159,38 @@ int main() {
                 bezierVertices.push_back(by);
             }
             glBufferData(GL_ARRAY_BUFFER, bezierVertices.size() * sizeof(float), bezierVertices.data(), GL_DYNAMIC_DRAW);
+
             glUniform1i(glGetUniformLocation(prog, "u_isPoint"), 0);
-            glUniform3f(glGetUniformLocation(prog, "u_color"), 1.0f, 0.0f, 0.0f); // Piros szín a görbének
+            glUniform3f(glGetUniformLocation(prog, "u_color"), 1.0f, 0.0f, 0.0f); // Tiszta piros
+
+            glLineWidth(4.0f); // Vastagítás
             glDrawArrays(GL_LINE_STRIP, 0, bezierVertices.size() / 2);
+            glLineWidth(1.0f); // Visszaállítás
         }
 
-        // --- 3. KONTROLLPONTOK RAJZOLÁSA (2. FELADAT) ---
+        // 3. KONTROLLPONTOK (Tökéletes, igazi körök rajzolása)
         if (!controlPoints.empty()) {
-            std::vector<float> ptVertices;
+            glUniform1i(glGetUniformLocation(prog, "u_isPoint"), 0);
+            glUniform3f(glGetUniformLocation(prog, "u_color"), 1.0f, 0.3f, 0.1f); // Narancsos-piros szín
+
             for (const auto& p : controlPoints) {
-                ptVertices.push_back(p.x); ptVertices.push_back(p.y);
+                std::vector<float> circleVertices;
+                int sides = 30; // 30-szög a sima körhöz
+
+                // Középpont
+                circleVertices.push_back(p.x);
+                circleVertices.push_back(p.y);
+
+                // Kerület
+                for (int i = 0; i <= sides; ++i) {
+                    float angle = i * 2.0f * 3.1415926f / sides;
+                    circleVertices.push_back(p.x + cos(angle) * pointRadius);
+                    circleVertices.push_back(p.y + sin(angle) * pointRadius);
+                }
+
+                glBufferData(GL_ARRAY_BUFFER, circleVertices.size() * sizeof(float), circleVertices.data(), GL_DYNAMIC_DRAW);
+                glDrawArrays(GL_TRIANGLE_FAN, 0, sides + 2);
             }
-            glBufferData(GL_ARRAY_BUFFER, ptVertices.size() * sizeof(float), ptVertices.data(), GL_DYNAMIC_DRAW);
-            glUniform1i(glGetUniformLocation(prog, "u_isPoint"), 1); // Bekapcsoljuk a kerekítést a shaderben!
-            glUniform1f(glGetUniformLocation(prog, "u_pointSize"), pointRadius * 2.0f); // d=12 pixel
-            glUniform3f(glGetUniformLocation(prog, "u_color"), 0.0f, 0.0f, 1.0f); // Kék pontok
-            glDrawArrays(GL_POINTS, 0, controlPoints.size());
         }
 
         glfwSwapBuffers(window);
