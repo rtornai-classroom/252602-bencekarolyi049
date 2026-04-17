@@ -28,7 +28,7 @@ struct Point { float x, y; };
 std::vector<Point> controlPoints;
 int draggedPointIndex = -1;
 
-// FONTOS: A tanár kérése (3 <= d <= 9). A 4.0f sugár = 8.0 pixel átmérő! Tökéletes.
+
 const float pointRadius = 4.0f;
 
 // --- MATEMATIKA (Bernstein-polinomhoz) ---
